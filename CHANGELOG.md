@@ -64,4 +64,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2026-08-30
+
+### Added
+- docs/Memory.md - AI context memory file for tracking progress
+
+### Changed
+- Moved all documentation files to docs/ folder
+  - docs/PRD.md
+  - docs/Architecture.md
+  - docs/Rules.md
+  - docs/Phases.md
+  - docs/Design.md
+  - docs/Memory.md
+- Updated README.md documentation links to point to docs/ folder
+
+---
+
 *Note: This changelog will be updated with each meaningful change to the project. Old entries are never modified or removed.*

@@ -66,7 +66,8 @@ AniBili/
 │   ├── Architecture.md         # Technical Architecture
 │   ├── Rules.md                # AI Guidelines
 │   ├── Phases.md               # Development Phases
-│   └── Design.md               # Design System
+│   ├── Design.md               # Design System
+│   └── Memory.md               # AI Context Memory
 ├── CHANGELOG.md                # Version History
 └── README.md                   # This file
 ```
@@ -93,11 +94,12 @@ Deploy directly to Vercel, Netlify, or any static hosting that supports ES modul
 
 ## Documentation
 
-- [Project Requirements (PRD.md)](PRD.md)
-- [Architecture (Architecture.md)](Architecture.md)
-- [Rules (Rules.md)](Rules.md)
-- [Development Phases (Phases.md)](Phases.md)
-- [Design System (Design.md)](Design.md)
+- [Project Requirements (PRD.md)](docs/PRD.md)
+- [Architecture (Architecture.md)](docs/Architecture.md)
+- [Rules (Rules.md)](docs/Rules.md)
+- [Development Phases (Phases.md)](docs/Phases.md)
+- [Design System (Design.md)](docs/Design.md)
+- [AI Memory (Memory.md)](docs/Memory.md)
 - [Changelog (CHANGELOG.md)](CHANGELOG.md)
 
 ## License
