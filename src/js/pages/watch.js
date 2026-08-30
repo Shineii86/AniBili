@@ -1,10 +1,60 @@
+/**
+ * ============================================================================
+ *  AniBili - Watch Page
+ * ============================================================================
+ *
+ *  Project:    AniBili - Free Anime Streaming App
+ *  Module:     Watch Page
+ *  Author:     Shinei Nouzen
+ *  License:    MIT
+ *
+ *  Description:
+ *      Video player page with embed sources, sub/dub toggle,
+ *      provider switching, episode grid, and auto-next on
+ *      episode completion. Handles unavailable episodes
+ *      with countdown timers.
+ *
+ * ============================================================================
+ */
+
+"use strict";
+
 import { getAnimeById } from "../api.js";
 import { esc, title, cover, getAiredCount, getPlannedCount, isEpisodeReleased, upcomingEpLabel, formatCountdown, icons } from "../utils.js";
 import { addToHistory, setProgress, getProgress, parseKisskhMessage } from "../storage.js";
 import { EMBED_PROVIDERS, isAnixoUrl, classifyPlayerMessage } from "../player.js";
 import { setCurrentPage } from "../router.js";
 
+// ==================== WATCH PAGE RENDERER ====================
+
+/**
+ * ---- FEATURE: WATCH_PAGE ----
+ *
+ *  Render the video player page.
+ *
+ *  @param  {HTMLElement}   app     - The app container element
+ *  @param  {number|string} id      - AniList media ID
+ *  @param  {number}        episode - Episode number to play
+ *
+ *  @logic
+ *      1. Fetch anime details
+ *      2. Calculate aired/planned episode counts
+ *      3. Record to history and set progress if episode is available
+ *      4. Build episode grid HTML
+ *      5. Build player area (iframe, controls, countdown)
+ *      6. Discover sources from active provider
+ *      7. Set up postMessage listener for embed events
+ *      8. Set up countdown timer for next episode
+ *      9. Register page lifecycle (cleanup timers + listeners)
+ *
+ *  @tips
+ *      - Auto-records to history when episode is available
+ *      - Progress only advances forward (never decreases)
+ *      - Handles three unavailable states: not yet released, future episode, no sources
+ *      - PostMessage listener auto-advances to next episode on "ended"
+ */
 export async function renderWatch(app, id, episode) {
+  // ---- FEATURE: DATA_FETCH ----
   const anime = await getAnimeById(id);
   const t = title(anime);
   const airedEps = getAiredCount(anime);
@@ -19,6 +69,7 @@ export async function renderWatch(app, id, episode) {
   const notYetReleased = anime.status === "NOT_YET_RELEASED";
   const canWatch = isEpisodeReleased(anime, episode);
 
+  // ---- FEATURE: HISTORY_RECORDING ----
   if (canWatch) {
     addToHistory({
       animeId: anime.id,
@@ -29,6 +80,7 @@ export async function renderWatch(app, id, episode) {
     setProgress(anime.id, episode);
   }
 
+  // ---- FEATURE: PLAYER_STATE ----
   let sources = [],
     activeSource = 0,
     loading = true,
@@ -37,6 +89,7 @@ export async function renderWatch(app, id, episode) {
     currentLang = "sub",
     currentProvider = EMBED_PROVIDERS[0].id;
 
+  // ---- FEATURE: UNAVAILABLE_HTML ----
   function unavailableHtml() {
     if (notYetReleased) {
       return `<div class="player-unavailable">
@@ -69,6 +122,7 @@ export async function renderWatch(app, id, episode) {
     </div>`;
   }
 
+  // ---- FEATURE: EPISODE_GRID_HTML ----
   let episodeGridHtml = "";
   if (totalEps > 0) {
     const watched = getProgress(anime.id);
@@ -91,6 +145,7 @@ export async function renderWatch(app, id, episode) {
     episodeGridHtml += `</div></div>`;
   }
 
+  // ---- FEATURE: PLAYER_AREA_HTML ----
   function playerAreaHtml() {
     let html = `<div class="player-wrapper">`;
     if (loading && canWatch) {
@@ -107,6 +162,7 @@ export async function renderWatch(app, id, episode) {
     }
     html += `</div>`;
 
+    // ---- FEATURE: NEXT_EP_COUNTDOWN ----
     if (canWatch && nextEp && nextEpDate) {
       const diff = nextEpDate * 1000 - Date.now();
       if (diff > 0) {
@@ -117,6 +173,7 @@ export async function renderWatch(app, id, episode) {
       }
     }
 
+    // ---- FEATURE: LANG_TOGGLE ----
     if (canWatch) {
       html += `<div class="player-lang-toggle">
         <button class="lang-btn ${currentLang === "sub" ? "lang-btn-active" : ""}" data-lang="sub">Sub</button>
@@ -124,6 +181,7 @@ export async function renderWatch(app, id, episode) {
       </div>`;
     }
 
+    // ---- FEATURE: PROVIDER_TOGGLE ----
     if (canWatch && EMBED_PROVIDERS.length > 1) {
       html += `<div class="player-provider-toggle">`;
       EMBED_PROVIDERS.forEach((p) => {
@@ -132,6 +190,7 @@ export async function renderWatch(app, id, episode) {
       html += `</div>`;
     }
 
+    // ---- FEATURE: SOURCE_LIST ----
     if (sources.length > 2) {
       html += `<div class="player-source-list">`;
       sources.forEach((s, i) => {
@@ -140,10 +199,12 @@ export async function renderWatch(app, id, episode) {
       html += `</div>`;
     }
 
+    // ---- FEATURE: ERROR_DISPLAY ----
     if (error) {
       html += `<div class="embed-error">${esc(error)} <button class="btn btn-outline btn-sm" id="retry-btn">Retry</button></div>`;
     }
 
+    // ---- FEATURE: CUSTOM_EMBED_URL ----
     if (!loading && !embedUrl && canWatch) {
       html += `<div class="player-url-input"><input type="text" id="custom-embed-url" placeholder="Or paste an embed URL..." /><button class="btn btn-primary btn-sm" id="load-custom-url">Load</button></div>`;
     }
@@ -151,10 +212,12 @@ export async function renderWatch(app, id, episode) {
     return html;
   }
 
+  // ---- FEATURE: PLAYER_RENDER ----
   function renderPlayer() {
     const region = document.getElementById("player-dynamic");
     region.innerHTML = playerAreaHtml();
 
+    // ---- FEATURE: SOURCE_CLICK ----
     region.querySelectorAll("[data-source-index]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const idx = parseInt(btn.dataset.sourceIndex);
@@ -166,6 +229,7 @@ export async function renderWatch(app, id, episode) {
       });
     });
 
+    // ---- FEATURE: LANG_CLICK ----
     region.querySelectorAll("[data-lang]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const lang = btn.dataset.lang;
@@ -176,6 +240,7 @@ export async function renderWatch(app, id, episode) {
       });
     });
 
+    // ---- FEATURE: PROVIDER_CLICK ----
     region.querySelectorAll("[data-provider]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const pid = btn.dataset.provider;
@@ -186,6 +251,7 @@ export async function renderWatch(app, id, episode) {
       });
     });
 
+    // ---- FEATURE: CUSTOM_URL_LOAD ----
     const loadBtn = region.querySelector("#load-custom-url");
     if (loadBtn) {
       loadBtn.addEventListener("click", () => {
@@ -199,10 +265,12 @@ export async function renderWatch(app, id, episode) {
       });
     }
 
+    // ---- FEATURE: RETRY_BUTTON ----
     const retryBtn = region.querySelector("#retry-btn");
     if (retryBtn) retryBtn.addEventListener("click", discoverSources);
   }
 
+  // ---- FEATURE: EMBED_MESSAGE_HANDLER ----
   function onPlayerMessage(e) {
     const d = parseKisskhMessage(e);
     if (!d) return;
@@ -221,6 +289,7 @@ export async function renderWatch(app, id, episode) {
     }
   }
 
+  // ---- FEATURE: SOURCE_DISCOVERY ----
   function discoverSources() {
     if (!canWatch) {
       loading = false;
@@ -248,6 +317,7 @@ export async function renderWatch(app, id, episode) {
     renderPlayer();
   }
 
+  // ---- FEATURE: PAGE_HTML ----
   let html = `<div class="player-container">`;
   html += `<div class="player-info"><div>
     <a href="#/anime/${anime.id}" class="player-title">${esc(t)}</a>
@@ -265,6 +335,7 @@ export async function renderWatch(app, id, episode) {
 
   renderPlayer();
 
+  // ---- FEATURE: COUNTDOWN_TIMER ----
   const showCountdown = nextEp && nextEpDate;
   const timer = showCountdown
     ? setInterval(() => {
@@ -283,6 +354,8 @@ export async function renderWatch(app, id, episode) {
       }, 1000)
     : null;
   window.addEventListener("message", onPlayerMessage);
+
+  // ---- FEATURE: PAGE_LIFECYCLE ----
   setCurrentPage({
     destroy: () => {
       if (timer) clearInterval(timer);
@@ -291,3 +364,14 @@ export async function renderWatch(app, id, episode) {
   });
   discoverSources();
 }
+
+/**
+ * ============================================================================
+ *  END OF WATCH PAGE MODULE
+ * ============================================================================
+ *
+ *  Exports:
+ *      - renderWatch() - Render watch/player page
+ *
+ * ============================================================================
+ */

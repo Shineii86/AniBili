@@ -1,5 +1,66 @@
+/**
+ * ============================================================================
+ *  AniBili - Hero Slideshow Component
+ * ============================================================================
+ *
+ *  Project:    AniBili - Free Anime Streaming App
+ *  Module:     Hero Component
+ *  Author:     Shinei Nouzen
+ *  License:    MIT
+ *  Version:    1.1.3
+ *  Updated:    2026-08-30
+ *
+ *  Description:
+ *      Hero slideshow for the home page. Displays top airing anime
+ *      with auto-rotation, touch/swipe support, lazy media loading,
+ *      and pause-on-hover. Supports keyboard navigation and
+ *      visibility API for tab switching.
+ *
+ * ============================================================================
+ */
+
+"use strict";
+
 import { esc, title, cover, stripHtml, getAiredCount, formatCountdown, cssUrl, icons } from "../utils.js";
 
+// ==================== SLIDESHOW HTML ====================
+
+/**
+ * ---- FEATURE: HERO_SLIDESHOW_HTML ----
+ *
+ *  Generate the full hero slideshow HTML structure.
+ *  Includes slides, navigation arrows, and dot indicators.
+ *
+ *  @param  {Array<Object>}  topAiring - Array of top airing anime objects
+ *  @return {string}                  - Complete slideshow HTML
+ *
+ *  @tips
+ *      - First slide has background image inline (LCP optimization)
+ *      - Other slides lazy-load background on activation
+ *      - Cover images only loaded for active slide
+ *      - Dot indicators allow direct slide navigation
+ *      - Arrow buttons hidden on mobile via CSS
+ *
+ *  @structure
+ *      .hero-slideshow
+ *        .hero-slide.active
+ *          .hero-slide-bg          (background image)
+ *          .hero-slide-overlay     (gradient overlay)
+ *          .hero-slide-content
+ *            .hero-rank            (#1, #2, etc.)
+ *            .hero-slide-main
+ *              .hero-slide-cover   (anime cover image)
+ *              .hero-slide-info
+ *                .hero-slide-badge ("Now Airing")
+ *                .hero-slide-title
+ *                .hero-slide-tags  (genres + score)
+ *                .hero-slide-desc  (description)
+ *                .hero-slide-meta  (format, eps, next ep)
+ *                .hero-slide-actions (View Details, Watch Now)
+ *        .hero-arrow.prev
+ *        .hero-arrow.next
+ *        .hero-dots
+ */
 export function heroSlideshow(topAiring) {
   let html = `<div class="hero-slideshow" id="hero-slideshow">`;
   topAiring.forEach((anime, i) => {
@@ -57,6 +118,33 @@ export function heroSlideshow(topAiring) {
   return html;
 }
 
+// ==================== SLIDESHOW INITIALIZATION ====================
+
+/**
+ * ---- FEATURE: HERO_SLIDESHOW_INIT ----
+ *
+ *  Initialize slideshow interactivity after HTML is rendered.
+ *  Sets up auto-rotation, navigation, touch/swipe, and lifecycle.
+ *
+ *  @param  {Array<Object>}  topAiring - Array of top airing anime objects
+ *  @return {Object}                   - { destroy: Function } for cleanup
+ *
+ *  @logic
+ *      1. Cache slide and dot elements
+ *      2. Set up arrow button click handlers
+ *      3. Set up dot click handlers
+ *      4. Set up mouseenter/mouseleave for pause/resume
+ *      5. Set up touchstart/touchend for swipe navigation
+ *      6. Set up visibilitychange for tab switching
+ *      7. Start 3-second auto-rotation timer
+ *
+ *  @tips
+ *      - Timer pauses on mouse hover and tab switching
+ *      - Swipe threshold is 40px (prevents accidental swipes)
+ *      - Lazy loads background images on slide activation
+ *      - Returns destroy() for SPA cleanup
+ *      - Ensures at least 2 slides before initializing controls
+ */
 export function initHeroSlideshow(topAiring) {
   let heroIndex = 0;
   let heroTimer = null;
@@ -66,6 +154,7 @@ export function initHeroSlideshow(topAiring) {
   const slideshowEl = document.getElementById("hero-slideshow");
   const heroBgs = topAiring.map((a) => a.bannerImage || cover(a));
 
+  // ---- FEATURE: LAZY_MEDIA_LOADING ----
   function ensureSlideMedia(slide, i) {
     const bg = slide.querySelector(".hero-slide-bg");
     if (bg && !bg.style.backgroundImage) {
@@ -77,6 +166,7 @@ export function initHeroSlideshow(topAiring) {
     }
   }
 
+  // ---- FEATURE: SLIDE_NAVIGATION ----
   function showSlide(n) {
     heroIndex = (n + heroCount) % heroCount;
     slides.forEach((s, i) => {
@@ -86,6 +176,7 @@ export function initHeroSlideshow(topAiring) {
     dots.forEach((d, i) => d.classList.toggle("active", i === heroIndex));
   }
 
+  // ---- FEATURE: AUTO_ROTATION ----
   function startHero() {
     clearInterval(heroTimer);
     if (document.hidden) return;
@@ -93,6 +184,7 @@ export function initHeroSlideshow(topAiring) {
   }
 
   if (slideshowEl && heroCount > 1) {
+    // ---- FEATURE: ARROW_NAVIGATION ----
     const prevBtn = document.getElementById("hero-prev");
     const nextBtn = document.getElementById("hero-next");
     if (prevBtn)
@@ -105,17 +197,22 @@ export function initHeroSlideshow(topAiring) {
         showSlide(heroIndex + 1);
         startHero();
       });
+
+    // ---- FEATURE: DOT_NAVIGATION ----
     dots.forEach((d) =>
       d.addEventListener("click", () => {
         showSlide(parseInt(d.dataset.dot));
         startHero();
       })
     );
+
+    // ---- FEATURE: HOVER_PAUSE ----
     slideshowEl.addEventListener("mouseenter", () =>
       clearInterval(heroTimer)
     );
     slideshowEl.addEventListener("mouseleave", startHero);
 
+    // ---- FEATURE: TOUCH_SWIPE ----
     let touchStartX = null;
     slideshowEl.addEventListener("touchstart", (e) => {
       touchStartX = e.changedTouches[0].clientX;
@@ -133,6 +230,7 @@ export function initHeroSlideshow(topAiring) {
     startHero();
   }
 
+  // ---- FEATURE: VISIBILITY_API ----
   const onVisibility = () => {
     if (document.hidden) clearInterval(heroTimer);
     else if (slideshowEl && heroCount > 1) startHero();
@@ -146,3 +244,15 @@ export function initHeroSlideshow(topAiring) {
     },
   };
 }
+
+/**
+ * ============================================================================
+ *  END OF HERO COMPONENT MODULE
+ * ============================================================================
+ *
+ *  Exports:
+ *      - heroSlideshow()     - Generate slideshow HTML
+ *      - initHeroSlideshow() - Initialize interactivity
+ *
+ * ============================================================================
+ */

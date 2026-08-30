@@ -1,3 +1,21 @@
+/**
+ * ============================================================================
+ *  AniBili - Main Entry Point
+ * ============================================================================
+ *
+ *  Project:    AniBili - Free Anime Streaming App
+ *  Module:     App
+ *  Author:     Shinei Nouzen
+ *  License:    MIT
+ *
+ *  Description:
+ *      Main application entry point. Handles routing, search
+ *      autocomplete, and update notice system. Initializes the
+ *      SPA by listening to hash changes and rendering pages.
+ *
+ * ============================================================================
+ */
+
 "use strict";
 
 import { parseHash, getNavToken, incrementNavToken, destroyCurrentPage } from "./router.js";
@@ -14,15 +32,46 @@ import { getWatchlist, getProgress, storageGet, storageSet } from "./storage.js"
 import { fetchSuggestions, gql } from "./api.js";
 import { title, cover } from "./utils.js";
 
+// ==================== DOM REFERENCES ====================
+
+/** @type {HTMLElement} - Main app container */
 const app = document.getElementById("app");
+
+/** @type {HTMLInputElement} - Search input element */
 const searchInput = document.getElementById("nav-search-input");
+
+/** @type {HTMLFormElement} - Search form element */
 const searchForm = document.getElementById("nav-search-form");
+
+/** @type {HTMLElement} - Search suggestions dropdown */
 const suggestionsEl = document.getElementById("search-suggestions");
 
+// ==================== SEARCH AUTOCOMPLETE ====================
+
+/**
+ * ---- FEATURE: AUTOCOMPLETE_STATE ----
+ *
+ *  State management for search autocomplete dropdown.
+ *  Tracks active suggestion index and suggestion DOM elements.
+ *
+ *  @tips
+ *      - activeSuggestion = -1 means no suggestion selected
+ *      - suggestionItems cached for keyboard navigation
+ *      - debounceTimer prevents excessive API calls
+ */
 let activeSuggestion = -1;
 let suggestionItems = [];
 let debounceTimer = null;
 
+/**
+ * ---- FEATURE: CLOSE_SUGGESTIONS ----
+ *
+ *  Close and reset the suggestions dropdown.
+ *
+ *  @tips
+ *      - Clears innerHTML to remove event listeners
+ *      - Resets active index to -1 (no selection)
+ */
 function closeSuggestions() {
   suggestionsEl.classList.remove("open");
   suggestionsEl.innerHTML = "";
@@ -30,6 +79,27 @@ function closeSuggestions() {
   suggestionItems = [];
 }
 
+/**
+ * ---- FEATURE: LOAD_SUGGESTIONS ----
+ *
+ *  Load search suggestions from API and render dropdown.
+ *
+ *  @param  {string}  query - Search term (min 2 chars)
+ *
+ *  @logic
+ *      1. Validate query length
+ *      2. Fetch suggestions from API
+ *      3. Render suggestion items with cover images
+ *      4. Cache DOM elements for keyboard navigation
+ *      5. Show "No suggestions" if empty results
+ *      6. Close dropdown on API error
+ *
+ *  @tips
+ *      - Minimum 2 characters to trigger search
+ *      - Shows format and score in suggestion meta
+ *      - Each suggestion links to #/anime/{id}
+ *      - Images use coverImage.large for faster loading
+ */
 async function loadSuggestions(query) {
   if (!query || query.length < 2) {
     closeSuggestions();
@@ -66,6 +136,16 @@ async function loadSuggestions(query) {
   }
 }
 
+/**
+ * ---- FEATURE: UPDATE_ACTIVE_SUGGESTION ----
+ *
+ *  Update the visual active state on suggestion items.
+ *  Scrolls the active item into view if needed.
+ *
+ *  @tips
+ *      - Uses toggle for clean class management
+ *      - scrollIntoView with block: "nearest" avoids page jump
+ */
 function updateActive() {
   suggestionItems.forEach((el, i) => {
     el.classList.toggle("active", i === activeSuggestion);
@@ -75,6 +155,14 @@ function updateActive() {
   }
 }
 
+// ==================== SEARCH EVENT HANDLERS ====================
+
+/**
+ * ---- FEATURE: SEARCH_SUBMIT ----
+ *
+ *  Handle search form submission.
+ *  Navigates to search page with query parameter.
+ */
 searchForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const q = searchInput.value.trim();
@@ -85,6 +173,12 @@ searchForm.addEventListener("submit", (e) => {
   }
 });
 
+/**
+ * ---- FEATURE: SEARCH_INPUT_DEBOUNCE ----
+ *
+ *  Handle search input with 300ms debounce.
+ *  Loads suggestions after user stops typing.
+ */
 searchInput.addEventListener("input", () => {
   clearTimeout(debounceTimer);
   const q = searchInput.value.trim();
@@ -95,6 +189,18 @@ searchInput.addEventListener("input", () => {
   debounceTimer = setTimeout(() => loadSuggestions(q), 300);
 });
 
+/**
+ * ---- FEATURE: SEARCH_KEYBOARD_NAV ----
+ *
+ *  Handle keyboard navigation in suggestions dropdown.
+ *  Supports ArrowDown, ArrowUp, Enter, and Escape.
+ *
+ *  @tips
+ *      - ArrowDown/Up move through suggestions
+ *      - Enter navigates to selected suggestion
+ *      - Escape closes dropdown
+ *      - PreventDefault prevents page scroll on arrow keys
+ */
 searchInput.addEventListener("keydown", (e) => {
   if (!suggestionsEl.classList.contains("open")) return;
   if (e.key === "ArrowDown") {
@@ -118,6 +224,12 @@ searchInput.addEventListener("keydown", (e) => {
   }
 });
 
+/**
+ * ---- FEATURE: SUGGESTION_CLICK ----
+ *
+ *  Handle click on suggestion item.
+ *  Closes dropdown and clears input on navigation.
+ */
 suggestionsEl.addEventListener("click", (e) => {
   const link = e.target.closest(".search-suggestion");
   if (link) {
@@ -126,9 +238,37 @@ suggestionsEl.addEventListener("click", (e) => {
   }
 });
 
+// ==================== UPDATE NOTICE SYSTEM ====================
+
+/**
+ * ---- FEATURE: NOTICE_CONSTANTS ----
+ *
+ *  Constants for the update notice system.
+ */
 const NOTICE_FILE = "notice.json";
 const NOTICE_SEEN_KEY = "anibilib_notice_seen";
 
+/**
+ * ---- FEATURE: UPDATE_NOTICE ----
+ *
+ *  Show update notice modal on first visit to new version.
+ *  Fetches notice.json and compares version against seen storage.
+ *
+ *  @logic
+ *      1. Fetch notice.json (cache: no-cache for freshness)
+ *      2. Validate notice structure (version, items)
+ *      3. Check if version already seen
+ *      4. Show modal with 4-second countdown on close button
+ *      5. Disable close button during countdown
+ *      6. Save seen version on close
+ *
+ *  @tips
+ *      - 4-second countdown prevents accidental dismissal
+ *      - Close button disabled during countdown for forced reading
+ *      - Escape key closes modal (if countdown complete)
+ *      - Body scroll locked during modal display
+ *      - Saves version to prevent re-showing
+ */
 async function showUpdateNotice() {
   let notice;
   try {
@@ -172,6 +312,7 @@ async function showUpdateNotice() {
   const prevOverflow = document.body.style.overflow;
   document.body.style.overflow = "hidden";
 
+  // ---- FEATURE: COUNTDOWN_TIMER ----
   const revealAt = Date.now() + 4000;
   let countdown = null;
   function tick() {
@@ -188,6 +329,7 @@ async function showUpdateNotice() {
   countdown = setInterval(tick, 1000);
   tick();
 
+  // ---- FEATURE: CLOSE_NOTICE ----
   function closeNotice() {
     if (closeBtn.disabled) return;
     clearInterval(countdown);
@@ -203,6 +345,33 @@ async function showUpdateNotice() {
   document.addEventListener("keydown", onKey);
 }
 
+// ==================== ROUTING ====================
+
+/**
+ * ---- FEATURE: MAIN_ROUTER ----
+ *
+ *  Main routing function. Handles hash-based navigation.
+ *  Destroys current page, increments nav token, and renders
+ *  the appropriate page based on the URL path.
+ *
+ *  @logic
+ *      1. Destroy current page (cleanup timers, listeners)
+ *      2. Increment nav token (invalidate stale renders)
+ *      3. Parse hash into path and params
+ *      4. Show loading spinner
+ *      5. Match path and render corresponding page
+ *      6. Handle 404 for unknown routes
+ *      7. Handle errors with user-friendly message
+ *      8. Update active nav link
+ *      9. Scroll to top
+ *
+ *  @tips
+ *      - Loading spinner shown during async page renders
+ *      - Nav token prevents stale async renders from appearing
+ *      - Error page shows error message with "Go Home" button
+ *      - Supports routes: /, /search, /anime/:id, /watch/:id/:ep,
+ *        /watchlist, /history, /about
+ */
 async function route() {
   destroyCurrentPage();
   incrementNavToken();
@@ -232,6 +401,31 @@ async function route() {
   window.scrollTo(0, 0);
 }
 
+// ==================== INITIALIZATION ====================
+
+/**
+ * ---- FEATURE: APP_INIT ----
+ *
+ *  Initialize the application.
+ *  Set up hash change listener, run initial route,
+ *  and show update notice.
+ */
 window.addEventListener("hashchange", route);
 route();
 showUpdateNotice();
+
+/**
+ * ============================================================================
+ *  END OF APP MODULE
+ * ============================================================================
+ *
+ *  Features:
+ *      - Hash-based SPA routing
+ *      - Search autocomplete with debounce
+ *      - Keyboard navigation for suggestions
+ *      - Update notice with countdown timer
+ *      - Nav token for stale render prevention
+ *      - Error boundary with user-friendly messages
+ *
+ * ============================================================================
+ */

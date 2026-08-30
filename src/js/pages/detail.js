@@ -1,9 +1,61 @@
+/**
+ * ============================================================================
+ *  AniBili - Anime Detail Page
+ * ============================================================================
+ *
+ *  Project:    AniBili - Free Anime Streaming App
+ *  Module:     Detail Page
+ *  Author:     Shinei Nouzen
+ *  License:    MIT
+ *  Version:    1.1.3
+ *  Updated:    2026-08-30
+ *
+ *  Description:
+ *      Full anime detail page with hero banner, metadata stats,
+ *      episode grid with progress tracking, related anime,
+ *      and watchlist toggle. Supports expandable synopsis
+ *      and next episode countdown.
+ *
+ * ============================================================================
+ */
+
+"use strict";
+
 import { getAnimeById } from "../api.js";
 import { esc, title, cover, stripHtml, getAiredCount, getPlannedCount, isEpisodeReleased, upcomingEpLabel, formatCountdown, statusBadge, icons } from "../utils.js";
 import { addToWatchlist, removeFromWatchlist, isInWatchlist, getProgress } from "../storage.js";
 import { setCurrentPage } from "../router.js";
 
+// ==================== DETAIL PAGE RENDERER ====================
+
+/**
+ * ---- FEATURE: DETAIL_PAGE ----
+ *
+ *  Render the anime detail page.
+ *
+ *  @param  {HTMLElement}       app - The app container element
+ *  @param  {number|string}     id  - AniList media ID
+ *
+ *  @logic
+ *      1. Fetch full anime details
+ *      2. Extract all metadata fields
+ *      3. Build hero section (banner, cover, title, tags, CTA)
+ *      4. Build stats section (score, format, status, episodes, etc.)
+ *      5. Build expandable synopsis
+ *      6. Build episode grid with progress tracking
+ *      7. Build next episode countdown banner
+ *      8. Build related anime section
+ *      9. Initialize interactivity (synopsis toggle, watchlist button)
+ *
+ *  @tips
+ *      - CTA button adapts: "Start Watching", "Continue Ep X", or "Rewatch Ep 1"
+ *      - Episode grid shows aired (clickable), watched (highlighted), and upcoming (countdown)
+ *      - Watchlist button toggles between add/remove with class changes
+ *      - Synopsis expands on click if content overflows
+ *      - Relations filtered to: SEQUEL, PREQUEL, SIDE_STORY, PARENT
+ */
 export async function renderAnimeDetail(app, id) {
+  // ---- FEATURE: DATA_FETCH ----
   const anime = await getAnimeById(id);
   const t = title(anime);
   const engT = anime.title.english;
@@ -24,10 +76,12 @@ export async function renderAnimeDetail(app, id) {
   const status = anime.status || "";
   const isAiring = status === "RELEASING";
 
+  // ---- FEATURE: RELATED_FILTERING ----
   const relations = (anime.relations?.edges || []).filter((e) =>
     ["SEQUEL", "PREQUEL", "SIDE_STORY", "PARENT"].includes(e.relationType)
   );
 
+  // ---- FEATURE: CTA_BUTTON ----
   let ctaHtml = "";
   if (airedEps > 0) {
     const resumeEp = watched + 1;
@@ -40,6 +94,7 @@ export async function renderAnimeDetail(app, id) {
     }
   }
 
+  // ---- FEATURE: HERO_SECTION ----
   let html = "";
 
   html += `<div class="detail-hero">
@@ -69,6 +124,7 @@ export async function renderAnimeDetail(app, id) {
 
   html += `<div class="detail-body">`;
 
+  // ---- FEATURE: STATS_SECTION ----
   html += `<div class="detail-stats">`;
   const stats = [
     {
@@ -110,10 +166,12 @@ export async function renderAnimeDetail(app, id) {
   });
   html += `</div>`;
 
+  // ---- FEATURE: EXPANDABLE_SYNOPSIS ----
   html += `<div class="detail-section">
     <div class="detail-synopsis expandable" id="synopsis">${esc(desc)}</div>
   </div>`;
 
+  // ---- FEATURE: EPISODE_GRID ----
   if (totalKnown > 0) {
     const progressPct = anime.episodes
       ? Math.round((watched / anime.episodes) * 100)
@@ -124,6 +182,7 @@ export async function renderAnimeDetail(app, id) {
       <div class="ep-progress-bar"><div class="ep-progress-fill" style="width:${progressPct}%"></div></div>
     </div>`;
 
+    // ---- FEATURE: NEXT_EPISODE_COUNTDOWN ----
     if (nextEp && nextEpDate) {
       const diff = nextEpDate * 1000 - Date.now();
       if (diff > 0) {
@@ -149,6 +208,8 @@ export async function renderAnimeDetail(app, id) {
         </div>`;
       }
     }
+
+    // ---- FEATURE: EPISODE_BUTTONS ----
     html += `<div class="episodes-grid">`;
     for (let i = 1; i <= totalKnown; i++) {
       const isReleased = i <= airedEps;
@@ -178,6 +239,7 @@ export async function renderAnimeDetail(app, id) {
     html += `</div></div>`;
   }
 
+  // ---- FEATURE: RELATED_ANIME ----
   if (relations.length > 0) {
     html += `<div class="detail-section related-section"><div class="detail-section-title">Related</div><div class="scroll-row">${relations
       .map((rel) => {
@@ -197,11 +259,13 @@ export async function renderAnimeDetail(app, id) {
   html += `</div>`;
   app.innerHTML = html;
 
+  // ---- FEATURE: SYNOPSIS_TOGGLE ----
   const synEl = document.getElementById("synopsis");
   if (synEl && synEl.scrollHeight > synEl.clientHeight) {
     synEl.addEventListener("click", () => synEl.classList.toggle("expanded"));
   }
 
+  // ---- FEATURE: WATCHLIST_TOGGLE ----
   const btn = document.getElementById("watchlist-btn");
   let currentInList = inList;
   btn.addEventListener("click", () => {
@@ -218,3 +282,14 @@ export async function renderAnimeDetail(app, id) {
     }
   });
 }
+
+/**
+ * ============================================================================
+ *  END OF DETAIL PAGE MODULE
+ * ============================================================================
+ *
+ *  Exports:
+ *      - renderAnimeDetail() - Render anime detail page
+ *
+ * ============================================================================
+ */
