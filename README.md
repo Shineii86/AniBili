@@ -1,6 +1,9 @@
-<div align="center">
+> [!NOTE]
+> **AniBili** is a free, ad-free anime streaming app that runs entirely in your browser. No accounts, no ads, no setup. Just browse and watch.
 
-  <img src="public/assets/banner.png" alt="AniBili Banner" width="100%" />
+<div align="center">
+  
+  <img src="https://capsule-render.vercel.app/api?type=waving&height=300&color=gradient&text=𝘼𝙣𝙞𝘽𝙞𝙡𝙞&fontAlignY=30&fontSize=100&desc=𝖥𝗋𝖾𝖾%20𝖠𝗇𝗂𝗆𝖾%20𝖲𝗍𝗋𝖾𝖺𝗆𝗂𝗇𝗀%20𝖠𝗉𝗉&descSize=25" />
 
 </div>
 
@@ -25,13 +28,9 @@
 </p>
 
 <p align="center">
-  <b>A free, ad-free anime streaming experience that runs entirely in your browser.</b><br/>
-  Browse anime from AniList, stream instantly via embedded players, and track your watchlist — no account, no ads, no setup.<br/>
-  Pure vanilla JS, zero build steps, zero dependencies.
-</p>
-
-<p align="center">
-  <a href="https://anibili.vercel.app" target="_blank"><img src="https://img.shields.io/badge/LIVE-DEMO-e63946?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo"/></a>
+  <b>A free, ad-free anime streaming app that runs entirely in your browser.</b><br/>
+  Browse anime from AniList, stream instantly via embed players, track your watchlist and history.<br/>
+  Pure vanilla JS, zero build steps, zero dependencies, no accounts needed.
 </p>
 
 <p align="center">
@@ -46,8 +45,8 @@
 ---
 
 > [!WARNING]
-> 1. This project does not host any anime content — it only embeds players from 3rd party services.
-> 2. This project is explicitly made for **educational purposes only** and not for commercial usage.
+> 1. This `app` does not host any anime content — it only embeds players from 3rd party services.
+> 2. This `app` is explicitly made for **educational purposes only** and not for commercial usage. This repo will not be responsible for any misuse of it.
 > 3. All anime data, images, and content belong to their respective owners (AniList, Megavid, AniXo). This project is not affiliated with any streaming service.
 
 ---
@@ -56,6 +55,7 @@
 
 - [Overview](#-overview)
 - [Features](#-features)
+- [Data Sources](#-data-sources)
 - [Tech Stack](#-tech-stack)
 - [Architecture](#-architecture)
 - [Project Structure](#-project-structure)
@@ -76,7 +76,7 @@
 
 ## 🌸 Overview
 
-**AniBili** is a free, ad-free anime streaming web app that runs **entirely in your browser**. It fetches anime metadata from **AniList GraphQL**, streams via **Megavid/AniXo embed players**, and stores your watchlist, history, and progress in **localStorage** — no backend, no database, no accounts.
+**AniBili** is a free, ad-free anime streaming web app that runs **entirely in your browser**. It fetches anime metadata from **AniList GraphQL**, streams via **Megavid/AniXo embed players**, and stores your watchlist, history, and episode progress in **localStorage** — no backend, no database, no accounts required.
 
 > 💡 No build steps, no dependencies, no complex setup. Just deploy the `public/` folder and you have a production app.
 
@@ -93,18 +93,19 @@
 - 🔒 **Privacy First** — All data stays in your browser (localStorage)
 - 🚀 **One-Click Deploy** — Vercel, Netlify, GitHub Pages, Docker, and more
 
-### How It Works
+### 🎬 Embed Providers
 
-```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
-│   Browser    │────▶│  AniList API  │────▶│  Anime Metadata  │
-│   (AniBili)  │     │  (GraphQL)    │     │  (JSON)          │
-└──────┬──────┘     └──────────────┘     └─────────────────┘
-       │
-       │            ┌──────────────┐     ┌─────────────────┐
-       └───────────▶│  Megavid /   │────▶│  Video Stream    │
-                    │  AniXo       │     │  (Embed iframe)  │
-                    └──────────────┘     └─────────────────┘
+Two direct embed providers — no scraping, no Cloudflare issues:
+
+- **Megavid** (`megavid.buzz`) — Direct video embed with MAL ID support
+- **AniXo** (`anixo.buzz`) — Direct video embed, CORS-friendly
+
+```bash
+# Megavid embed URL pattern
+https://megavid.buzz/ani/{anilistId}/{episode}/{lang}?color=%23e63946&autoplay=true
+
+# AniXo embed URL pattern
+https://anixo.buzz/embed/ani/{anilistId}/{episode}/{lang}?color=%23e63946
 ```
 
 ---
@@ -181,6 +182,23 @@
 
 ---
 
+## 🗞️ Data Sources
+
+### Metadata Source
+
+| Source | API | Data |
+|:---|:---|:---|
+| 🌸 **AniList** | `graphql.anilist.co` | Search, info, characters, relations, trending, popular, schedule |
+
+### Streaming Sources
+
+| Source | Domain | Data |
+|:---|:---|:---|
+| 🎬 **Megavid** | `megavid.buzz` | Direct video embed URLs (supports MAL ID) |
+| 🎬 **AniXo** | `anixo.buzz` | Direct video embed URLs (CORS-friendly) |
+
+---
+
 ## 🛠️ Tech Stack
 
 | Technology | Purpose | Documentation |
@@ -194,7 +212,7 @@
 | 💾 [localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage) | Client-side persistence | [Docs](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage) |
 | ▲ [Vercel](https://vercel.com/) | Hosting & deployment | [Docs](https://vercel.com/docs) |
 
-### Zero Dependencies
+### 📦 Zero Dependencies
 
 ```json
 {
@@ -223,25 +241,24 @@
 
 ### Module System
 
-```
-app.js (entry)
-├── router.js          → hash routing, page lifecycle
-├── api.js             → AniList GraphQL client
-├── player.js          → embed providers, message classifier
-├── storage.js         → localStorage abstraction
-├── utils.js           → esc(), title(), cover(), icons
-├── components/
-│   ├── card.js        → anime card HTML
-│   ├── hero.js        → hero slideshow + touch/swipe
-│   └── nav.js         → responsive nav + mobile menu
-└── pages/
-    ├── home.js        → hero + trending + popular infinite scroll
-    ├── search.js      → search with filters + pagination
-    ├── detail.js      → anime detail + episode grid
-    ├── watch.js       → video player + sub/dub + provider toggle
-    ├── watchlist.js   → saved anime grid
-    ├── history.js     → watch history + continue watching
-    └── about.js       → about page
+```mermaid
+flowchart TD
+    A["🌐 Browser"] --> B["📄 app.js<br/>Entry Point"]
+    B --> C["🛤️ router.js<br/>Hash Routing"]
+    B --> D["📡 api.js<br/>AniList GraphQL"]
+    B --> E["🎬 player.js<br/>Embed Providers"]
+    B --> F["💾 storage.js<br/>localStorage"]
+    B --> G["🧩 components/<br/>card · hero · nav"]
+    B --> H["📄 pages/<br/>home · search · detail · watch"]
+
+    style A fill:#1e1e2e,stroke:#a78bfa,color:#f1f5f9
+    style B fill:#1e1e2e,stroke:#e63946,color:#f1f5f9
+    style C fill:#1e1e2e,stroke:#6366f1,color:#f1f5f9
+    style D fill:#1e1e2e,stroke:#06b6d4,color:#f1f5f9
+    style E fill:#1e1e2e,stroke:#f43f8e,color:#f1f5f9
+    style F fill:#1e1e2e,stroke:#22c55e,color:#f1f5f9
+    style G fill:#1e1e2e,stroke:#a855f7,color:#f1f5f9
+    style H fill:#1e1e2e,stroke:#eab308,color:#f1f5f9
 ```
 
 ---
@@ -326,7 +343,7 @@ AniBili/
 | 📦 Node.js | Any | Latest (for `npx serve`) |
 | 🌐 Browser | ES Module support | Chrome 89+, Firefox 78+, Safari 14+ |
 
-### 🔧 Local Development
+### 🔧 Installation
 
 ```bash
 # 1️⃣ Clone the repository
@@ -339,6 +356,8 @@ npx serve public -l 3000 -s
 # 3️⃣ Open in browser
 # → http://localhost:3000
 ```
+
+> 🌐 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### 🔧 Alternative Methods
 
@@ -584,9 +603,5 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 **Shinei Nouzen** — [@Shineii86](https://github.com/Shineii86)
 
 <p align="center">
-  <img src="public/assets/logo.png" alt="AniBili Logo" width="120" />
-</p>
-
-<p align="center">
-  <i>Built with vanilla JS. No frameworks. No build tools. No compromises.</i>
+  <img src="https://capsule-render.vercel.app/api?type=waving&height=150&color=gradient&text=Thank%20You%20For%20Watching&fontAlignY=50&fontSize=30" />
 </p>
