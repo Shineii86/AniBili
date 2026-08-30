@@ -37,7 +37,7 @@ export function renderAbout(app) {
 
   // ---- FEATURE: ABOUT_CONTENT ----
   let html = `<div class="about">`;
-  html += `<div class="about-header"><img src="/assets/wordmark.png" alt="AniBili" class="about-wordmark"></div>`;
+  html += `<div class="about-header"><img src="assets/wordmark.png" alt="AniBili" class="about-wordmark"></div>`;
   html += `<p class="about-text">AniBili is a free, ad-free anime streaming experience that runs entirely in your browser. Browse anime powered by AniList, stream instantly through the built-in player, and track your watchlist, history, and episode progress with no account or sign-up required.</p>`;
 
   html += `<h2 class="about-subtitle">What's Inside</h2>`;
