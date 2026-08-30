@@ -29,7 +29,8 @@ import { renderHistory } from "./pages/history.js";
 import { renderAbout } from "./pages/about.js";
 import { esc } from "./utils.js";
 import { getWatchlist, getProgress, storageGet, storageSet } from "./storage.js";
-import { fetchSuggestions, gql } from "./api.js";
+import { fetchSuggestions } from "./api.js";
+import { renderSchedule } from "./pages/schedule.js";
 import { title, cover } from "./utils.js";
 
 // ==================== DOM REFERENCES ====================
@@ -369,7 +370,7 @@ async function showUpdateNotice() {
  *      - Loading spinner shown during async page renders
  *      - Nav token prevents stale async renders from appearing
  *      - Error page shows error message with "Go Home" button
- *      - Supports routes: /, /search, /anime/:id, /watch/:id/:ep,
+ *      - Supports routes: /, /search, /schedule, /anime/:id, /watch/:id/:ep,
  *        /watchlist, /history, /about
  */
 async function route() {
@@ -382,6 +383,7 @@ async function route() {
   try {
     if (path === "/" || path === "") await renderHome(app);
     else if (path === "/search") await renderSearch(app, params);
+    else if (path === "/schedule") await renderSchedule(app);
     else if (path.startsWith("/anime/"))
       await renderAnimeDetail(app, path.split("/")[2]);
     else if (path.startsWith("/watch/")) {
@@ -426,6 +428,7 @@ showUpdateNotice();
  *      - Update notice with countdown timer
  *      - Nav token for stale render prevention
  *      - Error boundary with user-friendly messages
+ *      - Schedule page route
  *
  * ============================================================================
  */

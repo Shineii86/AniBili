@@ -285,20 +285,179 @@ export async function fetchSuggestions(query) {
   return data.Page.media;
 }
 
+// ==================== CHARACTERS ====================
+
+/**
+ * ---- FEATURE: ANIME_CHARACTERS ----
+ *
+ *  Fetch characters for an anime by AniList ID.
+ *  Returns main and supporting characters with voice actors.
+ *
+ *  @param  {number|string}  id      - AniList media ID
+ *  @param  {number}         perPage - Results per page (default: 12)
+ *  @return {Promise<Array>}         - Array of character objects
+ *
+ *  @tips
+ *      - Returns main cast sorted by role importance
+ *      - Voice actor included for display in detail pages
+ *      - Limited to 12 characters for UI performance
+ */
+export async function getAnimeCharacters(id, perPage = 12) {
+  const q = `query($id:Int,$perPage:Int){Media(id:$id,type:ANIME){characters(sort:ROLE,perPage:$perPage){edges{node{id name{full}image{large}}role}}}}`;
+  const data = await gql(q, { id: parseInt(id), perPage });
+  return data.Media?.characters?.edges || [];
+}
+
+// ==================== RECOMMENDATIONS ====================
+
+/**
+ * ---- FEATURE: ANIME_RECOMMENDATIONS ----
+ *
+ *  Fetch recommendations for an anime by AniList ID.
+ *  Returns recommended anime sorted by rating.
+ *
+ *  @param  {number|string}  id      - AniList media ID
+ *  @param  {number}         perPage - Results per page (default: 8)
+ *  @return {Promise<Array>}         - Array of recommendation objects
+ *
+ *  @tips
+ *      - Sorted by RATING_DESC for best recommendations
+ *      - Each item includes mediaRecommendation with full media fields
+ *      - Limited to 8 for detail page display
+ */
+export async function getAnimeRecommendations(id, perPage = 8) {
+  const q = `query($id:Int,$perPage:Int){Media(id:$id,type:ANIME){recommendations(sort:RATING_DESC,perPage:$perPage){edges{node{id rating mediaRecommendation{id title{romaji english}coverImage{large}format status episodes averageScore genres nextAiringEpisode{airingAt episode}}}}}}}`;
+  const data = await gql(q, { id: parseInt(id), perPage });
+  return data.Media?.recommendations?.edges || [];
+}
+
+// ==================== AIRING SCHEDULE ====================
+
+/**
+ * ---- FEATURE: AIRING_SCHEDULE ----
+ *
+ *  Fetch weekly airing schedule for anime.
+ *  Returns upcoming episodes with media details.
+ *
+ *  @param  {number}  page    - Page number (default: 1)
+ *  @param  {number}  perPage - Results per page (default: 20)
+ *  @param  {number}  start   - Unix timestamp for start range
+ *  @param  {number}  end     - Unix timestamp for end range
+ *  @return {Promise<Object>} - { media: Array, pageInfo: Object }
+ *
+ *  @tips
+ *      - Default range: now to +7 days for weekly schedule
+ *      - Each item includes episode number and airing time
+ *      - Media details included for thumbnail and metadata
+ *      - Deduplicates by media ID to prevent repeats
+ */
+export async function getAiringSchedule(page = 1, perPage = 50, start, end) {
+  const now = Math.floor(Date.now() / 1000);
+  const weekLater = now + 7 * 24 * 60 * 60;
+  const q = `query($page:Int,$perPage:Int,$start:Int,$end:Int){Page(page:$page,perPage:$perPage){pageInfo{total currentPage lastPage hasNextPage}airingSchedules(airingAt_greater:$start,airingAt_lesser:$end,sort:TIME){id episode airingAt media{id title{romaji english}coverImage{large}format episodes}}}}`;
+  const data = await gql(q, { page, perPage, start: start || now, end: end || weekLater });
+  const seen = new Set();
+  const unique = [];
+  for (const s of data.Page.airingSchedules) {
+    if (s.media && !seen.has(s.media.id)) {
+      seen.add(s.media.id);
+      unique.push({ ...s.media, episode: s.episode, airingAt: s.airingAt });
+    }
+  }
+  return { media: unique, pageInfo: data.Page.pageInfo };
+}
+
+// ==================== GENRES ====================
+
+/**
+ * ---- FEATURE: GENRE_COLLECTION ----
+ *
+ *  Fetch all available genres from AniList.
+ *  Returns flat array of genre name strings.
+ *
+ *  @return {Promise<Array<string>>} - Array of genre names
+ *
+ *  @tips
+ *      - Returns all AniList genres as strings
+ *      - Use for genre filter/search functionality
+ *      - Cached client-side since genres rarely change
+ */
+export async function getGenres() {
+  const q = `query{GenreCollection}`;
+  const data = await gql(q);
+  return data.GenreCollection || [];
+}
+
+// ==================== SEASONAL ====================
+
+/**
+ * ---- FEATURE: SEASONAL_ANIME ----
+ *
+ *  Fetch seasonal anime by season and year.
+ *  Returns paginated results sorted by popularity.
+ *
+ *  @param  {string}  season  - MediaSeason enum: WINTER, SPRING, SUMMER, FALL
+ *  @param  {number}  year    - Year (e.g., 2026)
+ *  @param  {number}  page    - Page number (default: 1)
+ *  @param  {number}  perPage - Results per page (default: 20)
+ *  @return {Promise<Object>} - { media: Array, pageInfo: Object }
+ *
+ *  @tips
+ *      - Sorted by POPULARITY_DESC for best seasonal results
+ *      - Uses same MEDIA_FIELDS_SMALL for consistency
+ *      - Validates season enum to prevent API errors
+ */
+export async function getSeasonalMedia(season, year, page = 1, perPage = 20) {
+  const validSeasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
+  if (!validSeasons.includes(season)) {
+    throw new Error(`Invalid season: ${season}. Must be one of: ${validSeasons.join(", ")}`);
+  }
+  const q = `query($page:Int,$perPage:Int,$season:MediaSeason,$year:Int){Page(page:$page,perPage:$perPage){pageInfo{total currentPage lastPage hasNextPage}media(season:$season,year:$year,type:ANIME,sort:POPULARITY_DESC){${MEDIA_FIELDS_SMALL}}}}`;
+  const data = await gql(q, { page, perPage, season, year });
+  return data.Page;
+}
+
+// ==================== AUTOCOMPLETE ====================
+
+/**
+ * ---- FEATURE: SEARCH_SUGGESTIONS ----
+ *
+ *  Fetch search suggestions for autocomplete dropdown.
+ *  Returns lightweight results with minimal fields.
+ *
+ *  @param  {string}  query - Search term (min 2 chars recommended)
+ *  @return {Promise<Array>} - Array of media objects (max 6)
+ *
+ *  @tips
+ *      - Returns top 6 matches for autocomplete
+ *      - Uses SEARCH_MATCH sort for relevance
+ *      - Called with debounce from search input handler
+ */
+export async function fetchSuggestions(query) {
+  const q = `query($search:String){Page(page:1,perPage:6){media(type:ANIME,search:$search,sort:SEARCH_MATCH){id title{romaji english}coverImage{large}format averageScore}}}`;
+  const data = await gql(q, { search: query });
+  return data.Page.media;
+}
+
 /**
  * ============================================================================
  *  END OF API MODULE
  * ============================================================================
  *
  *  Exports:
- *      - browseAnime()          - Browse with sort/format
- *      - getTrending()          - Trending anime
- *      - getPopular()           - All-time popular
- *      - getRecentlyUpdated()   - Recently updated via schedule
- *      - searchAnime()          - Search by query
- *      - getAnimeById()         - Full anime details
- *      - getTopAiring()         - Top airing for hero
- *      - fetchSuggestions()      - Autocomplete suggestions
+ *      - browseAnime()              - Browse with sort/format
+ *      - getTrending()              - Trending anime
+ *      - getPopular()               - All-time popular
+ *      - getRecentlyUpdated()       - Recently updated via schedule
+ *      - searchAnime()              - Search by query
+ *      - getAnimeById()             - Full anime details
+ *      - getTopAiring()             - Top airing for hero
+ *      - fetchSuggestions()          - Autocomplete suggestions
+ *      - getAnimeCharacters()       - Characters with voice actors
+ *      - getAnimeRecommendations()  - Recommended anime
+ *      - getAiringSchedule()        - Weekly airing schedule
+ *      - getGenres()                - Genre collection
+ *      - getSeasonalMedia()         - Seasonal anime by season/year
  *
  * ============================================================================
  */

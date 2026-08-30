@@ -21,10 +21,107 @@
 
 "use strict";
 
-import { getAnimeById } from "../api.js";
+import { getAnimeById, getAnimeCharacters, getAnimeRecommendations } from "../api.js";
 import { esc, title, cover, stripHtml, getAiredCount, getPlannedCount, isEpisodeReleased, upcomingEpLabel, formatCountdown, statusBadge, icons } from "../utils.js";
 import { addToWatchlist, removeFromWatchlist, isInWatchlist, getProgress } from "../storage.js";
 import { setCurrentPage } from "../router.js";
+
+// ==================== CHARACTERS SECTION ====================
+
+/**
+ * ---- FEATURE: CHARACTER_LIST ----
+ *
+ *  Fetch and render anime characters section.
+ *  Shows character thumbnails with names and roles.
+ *
+ *  @param  {HTMLElement}  container - Target container element
+ *  @param  {number|string} id       - AniList media ID
+ *
+ *  @tips
+ *      - Lazy loads character images for performance
+ *      - Shows role (Main, Supporting) under character name
+ *      - Limits to 12 characters for display
+ *      - Gracefully handles API errors
+ */
+async function buildCharacterList(container, id) {
+  try {
+    const characters = await getAnimeCharacters(id, 12);
+    if (!characters.length) return;
+
+    let html = `<div class="detail-section">
+      <div class="detail-section-title">Characters</div>
+      <div class="character-grid">`;
+
+    for (const edge of characters) {
+      const node = edge.node;
+      const role = edge.role || "Supporting";
+      html += `<div class="character-card">
+        <div class="character-image">
+          <img src="${esc(node.image?.large || "")}" alt="${esc(node.name?.full || "")}" loading="lazy">
+        </div>
+        <div class="character-info">
+          <div class="character-name">${esc(node.name?.full || "Unknown")}</div>
+          <div class="character-role">${esc(role)}</div>
+        </div>
+      </div>`;
+    }
+
+    html += `</div></div>`;
+    container.innerHTML = html;
+  } catch (err) {
+    console.error("Failed to load characters:", err);
+    container.innerHTML = "";
+  }
+}
+
+// ==================== RECOMMENDATIONS SECTION ====================
+
+/**
+ * ---- FEATURE: RECOMMENDATION_LIST ----
+ *
+ *  Fetch and render anime recommendations section.
+ *  Shows recommended anime cards with scores.
+ *
+ *  @param  {HTMLElement}  container - Target container element
+ *  @param  {number|string} id       - AniList media ID
+ *
+ *  @tips
+ *      - Shows rating score from AniList recommendation system
+ *      - Links to anime detail page on click
+ *      - Limits to 8 recommendations for display
+ *      - Gracefully handles API errors
+ */
+async function buildRecommendationList(container, id) {
+  try {
+    const recommendations = await getAnimeRecommendations(id, 8);
+    if (!recommendations.length) return;
+
+    let html = `<div class="detail-section related-section">
+      <div class="detail-section-title">Recommended</div>
+      <div class="scroll-row">`;
+
+    for (const edge of recommendations) {
+      const rec = edge.node.mediaRecommendation;
+      if (!rec) continue;
+      const t = title(rec);
+      html += `<a href="#/anime/${rec.id}" class="card">
+        <div class="card-image">
+          <img src="${esc(rec.coverImage?.large || "")}" alt="${esc(t)}" loading="lazy">
+          ${rec.averageScore ? `<span class="card-score">${rec.averageScore}%</span>` : ""}
+        </div>
+        <div class="card-body">
+          <div class="card-title">${esc(t)}</div>
+        </div>
+      </a>`;
+    }
+
+    html += `</div></div>`;
+    container.innerHTML = html;
+  } catch (err) {
+    console.error("Failed to load recommendations:", err);
+    container.innerHTML = "";
+  }
+}
 
 // ==================== DETAIL PAGE RENDERER ====================
 
@@ -256,6 +353,12 @@ export async function renderAnimeDetail(app, id) {
       .join("")}</div></div>`;
   }
 
+  // ---- FEATURE: CHARACTERS_CONTAINER ----
+  html += `<div id="characters-container"></div>`;
+
+  // ---- FEATURE: RECOMMENDATIONS_CONTAINER ----
+  html += `<div id="recommendations-container"></div>`;
+
   html += `</div>`;
   app.innerHTML = html;
 
@@ -281,6 +384,12 @@ export async function renderAnimeDetail(app, id) {
       currentInList = true;
     }
   });
+
+  // ---- FEATURE: LOAD_CHARACTERS_RECOMMENDATIONS ----
+  const charactersContainer = document.getElementById("characters-container");
+  const recommendationsContainer = document.getElementById("recommendations-container");
+  if (charactersContainer) buildCharacterList(charactersContainer, id);
+  if (recommendationsContainer) buildRecommendationList(recommendationsContainer, id);
 }
 
 /**
@@ -290,6 +399,10 @@ export async function renderAnimeDetail(app, id) {
  *
  *  Exports:
  *      - renderAnimeDetail() - Render anime detail page
+ *
+ *  Internal:
+ *      - buildCharacterList() - Fetch and render characters section
+ *      - buildRecommendationList() - Fetch and render recommendations section
  *
  * ============================================================================
  */

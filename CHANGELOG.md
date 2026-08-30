@@ -107,4 +107,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-*Note: This changelog will be updated with each meaningful change to the project. Old entries are never modified or removed.*
+## [1.2.0] - 2026-08-30
+
+### Added
+- src/js/pages/schedule.js - Weekly airing schedule page
+- src/js/api.js - 5 new AniList GraphQL queries:
+  - getAnimeCharacters() - Fetch characters with voice actors
+  - getAnimeRecommendations() - Fetch recommended anime
+  - getAiringSchedule() - Weekly airing schedule
+  - getGenres() - Genre collection
+  - getSeasonalMedia() - Seasonal anime by season/year
+- Detail page characters section with grid layout
+- Detail page recommendations section with scroll row
+- Schedule navigation link in header
+
+### Changed
+- Updated app.js - Removed dead gql import, added schedule route
+- Updated detail.js - Added character and recommendation sections
+- Updated index.html - Added Schedule nav link
+- Updated detail.css - Added character grid and schedule page styles
+
+---
+
+*Note: This changelog will be updated with each meaningful change to the project. Old entries are never modified or removed.*"
