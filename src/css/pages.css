@@ -378,6 +378,17 @@
   margin: 0 auto;
 }
 
+.about-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.about-wordmark {
+  max-width: 320px;
+  width: 100%;
+  height: auto;
+}
+
 .about-text {
   color: var(--text-muted);
   line-height: 1.7;
