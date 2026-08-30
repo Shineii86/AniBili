@@ -81,4 +81,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.2] - 2026-08-30
+
+### Changed
+- Updated Architecture.md with complete modular structure
+  - Added detailed file structure for src/js/ and src/css/
+  - Documented all core modules (API, Player, Storage, Router, Utils)
+  - Added component and page documentation
+  - Updated CSS architecture section
+  - Added deployment instructions
+  - Improved security and performance sections
+
+---
+
 *Note: This changelog will be updated with each meaningful change to the project. Old entries are never modified or removed.*
