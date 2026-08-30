@@ -61,6 +61,18 @@ AniBili/
 │   ├── notice.json             # Update notices
 │   ├── robots.txt              # Crawler instructions
 │   └── sitemap.xml             # XML sitemap
+├── .github/
+│   └── workflows/
+│       └── deploy.yml          # GitHub Pages CI/CD
+├── netlify.toml                # Netlify config
+├── wrangler.toml               # Cloudflare Pages config
+├── firebase.json               # Firebase Hosting config
+├── .firebaserc                 # Firebase project config
+├── Dockerfile                  # Docker config
+├── nginx.conf                  # Nginx config (for Docker)
+├── .dockerignore               # Docker ignore rules
+├── package.json                # NPM scripts (dev/serve)
+├── surge.json                  # Surge.sh config
 ├── docs/
 │   ├── PRD.md                  # Project Requirements
 │   ├── Architecture.md         # Technical Architecture
@@ -88,9 +100,117 @@ cd AniBili
 npx serve public
 ```
 
-### Deployment
+### Local Development
 
-Deploy directly to Vercel, Netlify, or any static hosting that supports ES modules.
+```bash
+git clone https://github.com/Shineii86/AniBili.git
+cd AniBili
+npx serve public -l 3000 -s
+# Open http://localhost:3000
+```
+
+## Deployment
+
+This is a **static site** — deploy the `public/` folder to any hosting platform.
+
+### Vercel
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy from project root
+vercel --prod
+
+# Or connect your GitHub repo at vercel.com/new
+```
+
+### Netlify
+
+```bash
+# Install Netlify CLI
+npm i -g netlify-cli
+
+# Deploy
+netlify deploy --prod --dir=public
+
+# Or connect repo at app.netlify.com — build config in netlify.toml
+```
+
+### GitHub Pages
+
+1. Go to repo **Settings → Pages**
+2. Set **Source** to **GitHub Actions**
+3. Push to `main` — workflow runs automatically
+4. Site live at `https://shineii86.github.io/AniBili/`
+
+### Cloudflare Pages
+
+```bash
+# Install Wrangler CLI
+npm i -g wrangler
+
+# Deploy
+wrangler pages deploy public --project-name=anibili
+
+# Or connect repo at dash.cloudflare.com
+```
+
+### Firebase Hosting
+
+```bash
+# Install Firebase CLI
+npm i -g firebase-tools
+
+# Login and init
+firebase login
+firebase init hosting  # select public/ as directory
+
+# Deploy
+firebase deploy --only hosting
+```
+
+### Docker
+
+```bash
+# Build image
+docker build -t anibili .
+
+# Run container
+docker run -d -p 8080:80 anibili
+
+# Open http://localhost:8080
+```
+
+### Surge.sh
+
+```bash
+# Install Surge
+npm i -g surge
+
+# Deploy
+surge public anibili.surge.sh
+```
+
+### Any Static Host
+
+Upload the `public/` folder to any static hosting service:
+- **GitHub Pages** — push `public/` to `gh-pages` branch
+- **Cloudflare Pages** — upload via dashboard
+- **AWS S3** — enable static website hosting
+- **Apache/Nginx** — copy `public/` to web root
+
+### Quick Comparison
+
+| Platform | Free Tier | Custom Domain | HTTPS | CLI Deploy |
+|----------|-----------|---------------|-------|------------|
+| Vercel | Unlimited | Yes | Auto | `vercel` |
+| Netlify | 100GB/mo | Yes | Auto | `netlify deploy` |
+| GitHub Pages | 1GB | Yes | Auto | `gh-pages` |
+| Cloudflare | Unlimited | Yes | Auto | `wrangler pages deploy` |
+| Firebase | 10GB/mo | Yes | Auto | `firebase deploy` |
+| Docker | Self-host | Yes | Manual | `docker run` |
+| Surge | Unlimited | Yes | Auto | `surge` |
 
 ## Documentation
 

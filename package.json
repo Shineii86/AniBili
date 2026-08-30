@@ -1,0 +1,17 @@
+{
+  "name": "anibili",
+  "version": "1.1.3",
+  "description": "Free Anime Streaming App",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve public -l 3000 -s",
+    "serve": "npx serve public -l 3000 -s",
+    "preview": "npx serve public -l 8080 -s"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shineii86/AniBili"
+  },
+  "author": "Shinei Nouzen",
+  "license": "MIT"
+}
