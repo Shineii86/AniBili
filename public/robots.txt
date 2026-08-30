@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://anibili.vercel.app/sitemap.xml

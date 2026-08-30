@@ -1,0 +1,12 @@
+{
+  "version": "1",
+  "title": "What's new in AniBili",
+  "items": [
+    "Welcome to AniBili - A fresh anime streaming experience",
+    "Modular codebase for better maintainability",
+    "Browse trending anime from AniList",
+    "Stream with sub/dub support via embed players",
+    "Track your watchlist and episode progress locally"
+  ],
+  "buttonLabel": "Got it"
+}

@@ -18,6 +18,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Design.md - Visual design system including colors, typography, and components
 - CHANGELOG.md - This file for tracking project changes
 
+## [1.1.0] - 2026-08-30
+
+### Added
+- Modular folder structure for better maintainability
+- src/js/ - Modular JavaScript files
+  - app.js - Main entry point with router and search
+  - api.js - AniList GraphQL API client
+  - player.js - Embed player providers and message handling
+  - storage.js - localStorage management for watchlist/history/progress
+  - router.js - Hash-based routing utilities
+  - utils.js - Common utility functions and helpers
+  - components/card.js - Reusable anime card component
+  - components/hero.js - Hero slideshow component
+  - components/nav.js - Navigation component
+  - pages/home.js - Home page renderer
+  - pages/search.js - Search page renderer
+  - pages/detail.js - Anime detail page renderer
+  - pages/watch.js - Video watch page renderer
+  - pages/watchlist.js - Watchlist page renderer
+  - pages/history.js - History page renderer
+  - pages/about.js - About page renderer
+- src/css/ - Modular CSS files
+  - main.css - Main entry point importing all styles
+  - variables.css - CSS custom properties
+  - base.css - Reset and base styles
+  - nav.css - Navigation styles
+  - cards.css - Card component styles
+  - player.css - Player styles
+  - detail.css - Detail page styles
+  - pages.css - Page-specific styles
+  - animations.css - Animations and transitions
+- public/ - Static assets folder
+  - index.html - Main HTML with ES module imports
+  - vercel.json - Vercel deployment config
+  - notice.json - Update notice configuration
+  - robots.txt - Crawler instructions
+  - sitemap.xml - XML sitemap
+
+### Changed
+- Migrated from single-file to modular architecture
+- Updated to ES modules for better code organization
+- Improved separation of concerns
+- Enhanced code maintainability
+
 ---
 
 *Note: This changelog will be updated with each meaningful change to the project. Old entries are never modified or removed.*
