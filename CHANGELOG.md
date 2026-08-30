@@ -94,4 +94,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.3] - 2026-08-30
+
+### Added
+- prompts/BRANDING.md - AI prompts for generating logo and banner
+- public/assets/logo.png - Application logo (from AniCult)
+- public/assets/banner.png - Social media banner/OG image (from AniCult)
+
+### Changed
+- Updated index.html to use logo.png as favicon
+- Updated index.html to use banner.png as OG/Twitter image
+
+---
+
 *Note: This changelog will be updated with each meaningful change to the project. Old entries are never modified or removed.*
